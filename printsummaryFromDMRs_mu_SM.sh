@@ -6,14 +6,14 @@ cd $printdir
 geometries=(GT SG MPpixLBL MPpixLBLstr MP2pixLBLHGIOV MP2pixHMSHGIOV MP2pixHMSstrHGIOV HipPypix)
 typ=SM
 input=mu
-variables=(mu dmu sigma)
+variables=(" mu" "dmu" "sigma" "sigma_mu")
 structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
 
 makefilename () {
     structure=$1
     geometry=$2
     variable=$3
-    echo $printdir/${variable}_${typ}_${structure}_${geometry}.dat
+    echo $printdir/${variable}_${typ}_${structure}_${geometry}.dat | tr -d '[:space:]'
 }
 for structure in "${structures[@]}"
 do
@@ -39,31 +39,23 @@ do
     if [ -f "$dir/$filetest" ]
     then
         cd $dir
-	for structure in "${structures[@]}"
+	for variable in "${variables[@]}"
 	do
-            file=`printsummarytable.py`
-	    line=`echo $file | grep "${input}_${structure} (um)"`
-            i=3
-	    for geometry in "${geometries[@]}"
+	    for structure in "${structures[@]}"
 	    do
-		value1=`echo $line | awk -v a=$i {'print $a'} | sed -n 1p`
-		variable1=`echo $line | awk {'print $1'} | sed -n 1p`
-		filename1=`makefilename $structure $geometry $variable1`
-		echo "$run $structure $geometry $value $variable1"
-		echo "$run $value" >> $filename1
-		value2=`echo $line | awk -v a=$i {'print $a'} | sed -n 2p`
-		variable2=`echo $line | awk {'print $1'} | sed -n 2p`
-		filename2=`makefilename $structure $geometry $variable2`
-		echo "$run $structure $geometry $value $variable2"
-		echo "$run $value" >> $filename2
-		value3=`echo $line | awk -v a=$i {'print $a'} | sed -n 3p`
-		variable3=`echo $line | awk {'print $1'} | sed -n 3p`
-		filename3=`makefilename $structure $geometry $variable3`
-		echo "$run $structure $geometry $value $variable3"
-		echo "$run $value" >> $filename3
-	        i=`echo "$i+1" | bc`
-	    done
-        done
+		file=`printsummarytable.py`
+		line=`echo $file | grep "${variable}_${structure} (um)"`
+		i=3
+		for geometry in "${geometries[@]}"
+		do
+		    value=`echo $line | awk -v a=$i {'print $a'}`
+		    filename=`makefilename $structure $geometry $variable`
+		    echo "$run $structure $geometry $value $variable"
+		    echo "$run $value" >> $filename
+	            i=`echo "$i+1" | bc`
+		done
+            done
+	done
 	cd -
     else
 	echo "empty or non existing"
