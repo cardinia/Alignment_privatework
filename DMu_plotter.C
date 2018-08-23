@@ -13,6 +13,7 @@
 #include "TPaveLabel.h"
 #include "TStyle.h"
 
+void scalebylumi(TGraph *g, double min=0., string scalefile="/afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv"); 
 
 void DMu_plotter(string type="MB"){
 	gROOT->SetBatch();
@@ -40,6 +41,7 @@ void DMu_plotter(string type="MB"){
 			g->SetLineColor(*colour);
 			g->SetMarkerColor(*colour);
 			g->SetMarkerStyle(20);
+			scalebylumi(g);
 			//g->Draw(first ? "APL" : "PLsame");
 			mg->Add(g,"PL");
 			first = false;
@@ -57,7 +59,7 @@ void DMu_plotter(string type="MB"){
 		char* Ytitle= (char *)YaxisNames.at(i).c_str();
 		mg->GetYaxis()->SetTitle(Ytitle);
 
-		mg->GetXaxis()->SetTitle("run number");
+		mg->GetXaxis()->SetTitle("processed luminosity [fb^{-1}]");
 		mg->GetYaxis()->SetTitleOffset(.8);
 		mg->GetYaxis()->SetTitleSize(.05);
 		mg->GetXaxis()->SetTitleSize(.04);
@@ -83,4 +85,49 @@ void DMu_plotter(string type="MB"){
 	  ++i;
 
 	}
+}
+
+void scalebylumi(TGraph *g, double min, string scalefile){ 
+  int N=g->GetN();
+  double *x=g->GetX();
+  int unitscale=pow(10,9);
+
+
+  TGraph * scale = new TGraph(scalefile.c_str());
+  int Nscale=scale->GetN();
+  double *xscale=scale->GetX();
+  double *yscale=scale->GetY();
+
+
+  int i=0;
+  while(i<N){
+    double lumi=min;
+    int index=-1;
+    for(int j=0;j<Nscale;j++){
+      lumi+=yscale[j];
+      if(x[i]>=xscale[j]){
+	index=j;
+	continue;
+      }
+    }
+    if(yscale[index]==0){
+      N=N-1;
+      g->RemovePoint(i);
+    }else{
+      x[i]=min;
+      for(int j=0;j<=index;j++)x[i]+=yscale[j]/unitscale;
+      //x[i]=lumi/unitscale;
+      i=i+1;
+    }
+    
+  } 
+  double lumi=min;
+  int index=-1;
+  for(int j=0;j<Nscale;j++){
+    lumi+=yscale[j]/unitscale;
+    
+  }
+  cout << "total lumi: " << lumi << endl;
+  g->GetHistogram()->Delete(); 
+  g->SetHistogram(0); 
 }
