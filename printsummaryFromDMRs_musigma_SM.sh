@@ -6,6 +6,7 @@ printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/al
 cd $printdir
 geometries=(GT SG weight10xZmumu+cosmics weight5xZmumu+cosmics weight20xZmumu+cosmics)
 typ=SM
+label=_v9
 #variables=(" mu" "dmu" "sigma" "sigma_mu")
 #structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
 structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB)
@@ -30,7 +31,7 @@ runs=(313041 313802 314675 314881 315257 315488 315489 315506 315640 315689 3156
 
 for run in "${runs[@]}"
 do
-    dir=$DMRdir/DMR_${typ}_${run}_v9/ExtendedOfflineValidation_Images/
+    dir=$DMRdir/DMR_${typ}_${run}${label}/ExtendedOfflineValidation_Images/
     filetest=DmedianR_BPIX.pdf
     echo $dir
     if [ -f "$dir/$filetest" ]

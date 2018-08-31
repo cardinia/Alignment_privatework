@@ -7,6 +7,7 @@ cd $printdir
 #geometries=(GT SG MPpixLBLstr HipPypix MP2pixHMSstrFIX MP2pixMLstrFIX MP2pixHMSnoFPIXzstrFIX MP2pixMLnoFPIXzatHLstrFIX MP2pixMLnoFPIXzstrFIX)
 geometries=(GT SG weight10xZmumu+cosmics weight5xZmumu+cosmics weight20xZmumu+cosmics)
 typ=MB
+label=_v9
 input=mu
 variables=(" mu" "dmu" "sigma_mu")
 #structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
@@ -36,7 +37,7 @@ runs=(313041 313802 314675 314881 315257 315488 315489 315506 315640 315689 3156
 
 for run in "${runs[@]}"
 do
-    dir=$DMRdir/DMR_${typ}_${run}_v9/ExtendedOfflineValidation_Images/
+    dir=$DMRdir/DMR_${typ}_${run}${label}/ExtendedOfflineValidation_Images/
     filetest=DmedianR_BPIX.pdf
     echo $dir
     if [ -f "$dir/$filetest" ]

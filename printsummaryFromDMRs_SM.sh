@@ -1,28 +1,35 @@
 #!/bin/zsh
 #DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/paconnor
 DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/hpeterse
-printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/MuDMR_SM
+printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/dMuDMR_SM
 #cd $DMRdir
 cd $printdir
+#geometries=(GT SG MPpixLBLstr HipPypix MP2pixHMSstrFIX MP2pixMLstrFIX MP2pixHMSnoFPIXzstrFIX MP2pixMLnoFPIXzatHLstrFIX MP2pixMLnoFPIXzstrFIX)
 geometries=(GT SG weight10xZmumu+cosmics weight5xZmumu+cosmics weight20xZmumu+cosmics)
 typ=SM
-#variables=(" mu" "dmu" "sigma" "sigma_mu")
+label=_v9
+input=mu
+variables=(" mu" "dmu" "sigma_mu")
 #structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
 structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB)
 
 makefilename () {
     structure=$1
     geometry=$2
-    echo $printdir/muandsigma_${typ}_${structure}_${geometry}.dat | tr -d '[:space:]'
+    variable=$3
+    echo $printdir/${variable}_${typ}_${structure}_${geometry}.dat | tr -d '[:space:]'
 }
 for structure in "${structures[@]}"
 do
     for geometry in "${geometries[@]}"
     do
-        filename=`makefilename $structure $geometry`
-        echo $filename
-        rm -f $filename
-        touch $filename
+	for variable in "${variables[@]}"
+	do
+            filename=`makefilename $structure $geometry $variable`
+            echo $filename
+            rm -f $filename
+            touch $filename
+	done
     done
 done
 
@@ -30,7 +37,7 @@ runs=(313041 313802 314675 314881 315257 315488 315489 315506 315640 315689 3156
 
 for run in "${runs[@]}"
 do
-    dir=$DMRdir/DMR_${typ}_${run}_v9/ExtendedOfflineValidation_Images/
+    dir=$DMRdir/DMR_${typ}_${run}${label}/ExtendedOfflineValidation_Images/
     filetest=DmedianR_BPIX.pdf
     echo $dir
     if [ -f "$dir/$filetest" ]
@@ -38,20 +45,20 @@ do
         cd $dir
 	for structure in "${structures[@]}"
 	do
-	    file=`printsummarytable.py`
-	    mu=`echo $file | grep " mu_${structure} (um)"`
-	    sigma=`echo $file | grep "sigma_mu_${structure} (um)"`
-	    i=3
 	    echo "$run $structure"
-	    
-	    for geometry in "${geometries[@]}"
+	    for variable in "${variables[@]}"
 	    do
-		muvalue=`echo $mu | awk -v a=$i {'print $a'}`
-		sigmavalue=`echo $sigma | awk -v a=$i {'print $a'}`
-		filename=`makefilename $structure $geometry`
-		echo "$run $muvalue $sigmavalue" >> $filename
-	        i=`echo "$i+1" | bc`
-	    done
+		file=`printsummarytable.py`
+		line=`echo $file | grep "${variable}_${structure} (um)"`
+		i=3
+		for geometry in "${geometries[@]}"
+		do
+		    value=`echo $line | awk -v a=$i {'print $a'}`
+		    filename=`makefilename $structure $geometry $variable`
+		    echo "$run $value" >> $filename
+	            i=`echo "$i+1" | bc`
+		done
+            done
 	done
 	cd -
     else
