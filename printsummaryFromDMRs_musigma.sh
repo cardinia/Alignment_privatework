@@ -1,11 +1,11 @@
 #!/bin/zsh
 #DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/paconnor
 DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/hpeterse
-printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/MuDMR_SM
+printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/MuDMR_MB
 #cd $DMRdir
 cd $printdir
 geometries=(GT SG weight10xZmumu+cosmics weight5xZmumu+cosmics weight20xZmumu+cosmics)
-typ=SM
+typ=MB
 #variables=(" mu" "dmu" "sigma" "sigma_mu")
 #structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
 structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB)

@@ -1,26 +1,34 @@
 #!/bin/zsh
-DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/paconnor
-printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/dMuDMR_SM
+#DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/paconnor
+DMRdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/hpeterse
+printdir=/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/dMuDMR_MB
 #cd $DMRdir
 cd $printdir
-geometries=(GT SG MPpixLBL MPpixLBLstr MP2pixLBLHGIOV MP2pixHMSHGIOV MP2pixHMSstrHGIOV HipPypix)
-typ=SM
-input=dmu
-structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
+#geometries=(GT SG MPpixLBLstr HipPypix MP2pixHMSstrFIX MP2pixMLstrFIX MP2pixHMSnoFPIXzstrFIX MP2pixMLnoFPIXzatHLstrFIX MP2pixMLnoFPIXzstrFIX)
+geometries=(GT SG weight10xZmumu+cosmics weight5xZmumu+cosmics weight20xZmumu+cosmics)
+typ=MB
+input=mu
+variables=(" mu" "dmu" "sigma_mu")
+#structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB TID TEC)
+structures=(BPIX FPIX BPIX_y FPIX_y TIB TOB)
 
 makefilename () {
     structure=$1
     geometry=$2
-    echo $printdir/${input}_${typ}_${structure}_${geometry}.dat
+    variable=$3
+    echo $printdir/${variable}_${typ}_${structure}_${geometry}.dat | tr -d '[:space:]'
 }
 for structure in "${structures[@]}"
 do
     for geometry in "${geometries[@]}"
     do
-        filename=`makefilename $structure $geometry`
-        echo $filename
-        rm -f $filename
-        touch $filename
+	for variable in "${variables[@]}"
+	do
+            filename=`makefilename $structure $geometry $variable`
+            echo $filename
+            rm -f $filename
+            touch $filename
+	done
     done
 done
 
@@ -28,7 +36,7 @@ runs=(313041 313802 314675 314881 315257 315488 315489 315506 315640 315689 3156
 
 for run in "${runs[@]}"
 do
-    dir=$DMRdir/DMR_${typ}_${run}_v4/ExtendedOfflineValidation_Images/
+    dir=$DMRdir/DMR_${typ}_${run}_v9/ExtendedOfflineValidation_Images/
     filetest=DmedianR_BPIX.pdf
     echo $dir
     if [ -f "$dir/$filetest" ]
@@ -36,18 +44,21 @@ do
         cd $dir
 	for structure in "${structures[@]}"
 	do
-            file=`printsummarytable.py`
-	    line=`echo $file | grep "${input}_${structure} (um)"`
-            i=3
-	    for geometry in "${geometries[@]}"
+	    echo "$run $structure"
+	    for variable in "${variables[@]}"
 	    do
-		filename=`makefilename $structure $geometry`
-		value=`echo $line | awk -v a=$i {'print $a'}`
-		echo "$run $structure $geometry $value"
-		echo "$run $value" >> $filename
-                i=`echo "$i+1" | bc`
-	    done
-        done
+		file=`printsummarytable.py`
+		line=`echo $file | grep "${variable}_${structure} (um)"`
+		i=3
+		for geometry in "${geometries[@]}"
+		do
+		    value=`echo $line | awk -v a=$i {'print $a'}`
+		    filename=`makefilename $structure $geometry $variable`
+		    echo "$run $value" >> $filename
+	            i=`echo "$i+1" | bc`
+		done
+            done
+	done
 	cd -
     else
 	echo "empty or non existing"
