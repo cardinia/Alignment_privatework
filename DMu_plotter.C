@@ -16,10 +16,14 @@
 #include "TStyle.h"
 
 void scalebylumi(TGraph *g, double min=0., string scalefile="/afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv"); 
+double scalerunbylumi(int run, double min=0., string scalefile="/afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv");
 
 
 void DMu_plotter(string type="MB"){
 	gROOT->SetBatch();
+
+	vector<int> pixelupdateruns {314881, 316758, 317527, 318228, 320377};
+
 	vector<string> structures { "BPIX", "FPIX", "BPIX_y", "FPIX_y", "TIB", "TOB" };
 	vector<string> variables { "mu", "dmu", "sigma_mu" };
 	vector<string> YaxisNames { "#mu [#mum]", "#Delta#mu [#mum]", "#sigma_{#mu} [#mum]" };
@@ -33,7 +37,7 @@ void DMu_plotter(string type="MB"){
 	
 	//v9
 	vector<string> geometries {"GT", "SG", "weight10xZmumu+cosmics", "weight5xZmumu+cosmics", "weight20xZmumu+cosmics"};
-	vector<Color_t> colours { kBlack, kRed, kViolet, kOrange}; 
+	vector<Color_t> colours { kBlack, kRed, kBlue, kViolet, kOrange}; 
 	int i=0;
 	for (string variable: variables) {
 	  for (string structure: structures) {
@@ -68,6 +72,7 @@ void DMu_plotter(string type="MB"){
 
 		mg->SetMaximum(max+range*0.1);
 		mg->SetMinimum(min-range*0.3);
+		//mg->GetXaxis()->SetLimits(317500,317700);;
 		if(variable=="sigma_mu"&&range>=3){
 		mg->SetMaximum(2);
 		mg->SetMinimum(-1);
@@ -87,11 +92,14 @@ void DMu_plotter(string type="MB"){
 		if(type=="MB")typetitle=(char *)"Minimum Bias";
 		if(type=="SM")typetitle=(char *)"Single Muon";
 
+		c->Update();
+
+
 		TLegend *legend = c->BuildLegend();
 		legend->SetHeader(typetitle);
 		TLegendEntry *header = (TLegendEntry*)legend->GetListOfPrimitives()->First();
 		header->SetTextSize(.04);
-		legend->SetNColumns(4);
+		legend->SetNColumns(5);
 		//legend->SetTextSize(0.05);
 		string structtitle="structure: "+structure;
 		legend->AddEntry((TObject*)0,structtitle.c_str(),"h");
@@ -99,6 +107,51 @@ void DMu_plotter(string type="MB"){
 		str->SetTextSize(.03);
      		cout << "pad max " << gPad->GetUymax() << " pad min " << gPad->GetUymin() << endl;
 		cout << "graph max " << max << " graph min " << min << endl;
+
+		int Nupdates = pixelupdateruns.size();
+		double lastlumi=0.;
+		vector<TPaveText*> labels;
+		for(int iline=0; iline<Nupdates;iline++){
+		  double lumi=0.;
+		  int run=pixelupdateruns.at(iline);
+		  lumi=scalerunbylumi(pixelupdateruns.at(iline));
+		  
+		  bool tooclose = false;
+		  if((lumi-lastlumi)<5&&iline!=0)tooclose=true;
+		  
+		  TLine *line = new TLine (lumi,c->GetUymin(),lumi,c->GetUymax());
+		  line->SetLineColor(kRed);
+		  line->SetLineWidth(2);
+		  line->Draw();
+
+		  int ix1;
+		  int ix2;
+		  int iw = gPad->GetWw();
+		  int ih = gPad->GetWh();
+		  double x1p,y1p,x2p,y2p;
+		  gPad->GetPadPar(x1p,y1p,x2p,y2p);
+
+		  ix1 = (Int_t)(iw*x1p);
+		  ix2 = (Int_t)(iw*x2p);
+		  double wndc  = TMath::Min(1.,(double)iw/(double)ih);
+		  double rw    = wndc/(double)iw;
+		  double x1ndc = (double)ix1*rw;
+		  double x2ndc = (double)ix2*rw;
+		  double rx1,ry1,rx2,ry2;
+		  gPad->GetRange(rx1,ry1,rx2,ry2);
+		  double rx = (x2ndc-x1ndc)/(rx2-rx1);
+		  double _sx;
+		  _sx = rx*(lumi-rx1)+x1ndc;
+		  TPaveText *box= new TPaveText(_sx+0.001,0.85-tooclose*0.05,_sx+0.08,0.89-tooclose*0.05,"blNDC");
+		  TText *textRun = box->AddText(Form("%i",int(pixelupdateruns.at(iline))));
+		  textRun->SetTextSize(0.025);
+		  labels.push_back(box);
+		  lastlumi=lumi;
+		}
+		for(int iline=0; iline<Nupdates;iline++){
+		  labels.at(iline)->Draw("same");
+		}
+		legend->Draw();
 		c->Update();
 		string pngfile="V9-"+type+"_"+variable+"_"+structure+ ".png";
 		string pdffile="V9-"+type+"_"+variable+"_"+structure+ ".pdf";
@@ -110,6 +163,33 @@ void DMu_plotter(string type="MB"){
 	  ++i;
 
 	}
+}
+double scalerunbylumi(int run, double min, string scalefile){
+  int unitscale=pow(10,3);
+
+
+  TGraph * scale = new TGraph(scalefile.c_str());
+  int Nscale=scale->GetN();
+  double *xscale=scale->GetX();
+  double *yscale=scale->GetY();
+
+
+  int i=0;
+  double lumi=min;
+  int index=-1;
+  for(int j=0;j<Nscale;j++){
+    lumi+=yscale[j];
+    if(run>=xscale[j]){
+      index=j;
+      continue;
+    }
+  }
+  lumi=min;  
+  for(int j=0;j<=index;j++)lumi+=yscale[j]/unitscale;
+   
+ 
+  return lumi;
+
 }
 
 void scalebylumi(TGraph *g, double min, string scalefile){ 
@@ -138,7 +218,7 @@ void scalebylumi(TGraph *g, double min, string scalefile){
     if(yscale[index]==0){
       N=N-1;
       g->RemovePoint(i);
-    }else{
+      }else{
       x[i]=min;
       for(int j=0;j<=index;j++)x[i]+=yscale[j]/unitscale;
       //x[i]=lumi/unitscale;
