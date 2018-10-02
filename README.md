@@ -19,6 +19,9 @@ Before running:
 
 To run the scripts on Minimum Bias and Single Muon at the same time I personally prefer to copy printsummaryFromDMRs.sh and printsummaryFromDMRs_musigma.sh and make identical scripts in which I change the MB string to SM.
 
+Small note:
+All the scripts require the geometries to be ordered in the same way as they appear using the command "printsummarytable.py" in the directories where the DMRs are stored. It is not currently possible to run on a subset of the geometries.
+In the plotting macros however the geometries that are actually plotted can also be a subset of all the ones available.
 
 
 As for the plotting macros the changes to do before running are the following:
