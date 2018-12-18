@@ -1,8 +1,26 @@
 # Alignment_privatework
 Repository for my private work regarding Alignment in the CMS experiment
 
-
 Instructions for running the scripts and plotting macros:
+
+Work in progress regarding the DMR trend tool:
+
+The tool to create and plot the DMR trends is currently stored in DMRs/DMR_MB_315690_v11/DMRtrends.C
+
+To run the DMR trends tool it is necessary to first run the Offline Validation using the all-in-one tool as per usual.
+However when running the TkAlMerge.sh script it is required to use the code currently stored in the following area:
+/afs/cern.ch/work/a/acardini/Alignment/MultiIOV/CMSSW_10_4_0_pre4/src
+This passage will be removed once a PR is done and the all-in-one tool is updated with the feature I implemented to save the histograms of the DMRs in a summary root file.
+
+Once this passage is done the tool can be run:
+1) Edit the DMRtrends.C macro L486 [1] to select the directory where the DMR summary files for the different IOVs are stored
+2) Compile the DMRtrends.C macro with make (the Makefile can be found in DMRs/DMR_MB_315690_v11/Makefile)
+3) Execute with ./DMRtrends
+
+[1]https://github.com/cardinia/Alignment_privatework/blob/master/DMRs/DMR_MB_315690_v11/DMRtrends.C#L486
+
+
+DEPRECATED method:
 
 Premises:
 - the script printsummaryFromDMRs.sh (and the corresponding script for Single Muon, printsummaryFromDMRs_SM.sh) are used to produce text files containing the run number and the values for the various variables related to the DMRs: the average, the deviation from the average and dmu;
