@@ -107,7 +107,7 @@ TString getName (TString structure, int layer, TString geometry){
 
 void scalebylumi(TGraphErrors *g, double min=0., string scalefile="/afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv"); 
 double scalerunbylumi(int run, double min=0., string scalefile="/afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv");
-void PlotDMRTrends(string label="_v11", string type="MB", const vector<int> IOVfirstrun={315257, 315488, 315489, 315506, 315640, 315689, 315690, 315713, 315790, 315800, 315973, 316058, 316060, 316082, 316187, 316200, 316216, 316218, 316239, 316271, 316361, 316363, 316378, 316456, 316470, 316505, 316559, 316569, 316665, 316758, 317080, 317182, 317212, 317295, 317339, 317382, 317438, 317527, 317661, 318228, 318712, 319337, 319460, 320377, 320569, 320688, 320712, 320809, 320821, 320823, 320838, 320853, 320856, 320917, 320933, 320936, 320980, 321004, 321009, 321051, 321067, 321119}, vector<string> geometries={"MP pix LBL","PIX HLS+ML STR fix","GT","SG"}, vector<Color_t> colours={kGreen, kBlue, kBlack, kRed});
+void PlotDMRTrends(string label="v11", string type="MB", const vector<int> IOVfirstrun={315257, 315488, 315489, 315506, 315640, 315689, 315690, 315713, 315790, 315800, 315973, 316058, 316060, 316082, 316187, 316200, 316216, 316218, 316239, 316271, 316361, 316363, 316378, 316456, 316470, 316505, 316559, 316569, 316665, 316758, 317080, 317182, 317212, 317295, 317339, 317382, 317438, 317527, 317661, 318228, 318712, 319337, 319460, 320377, 320569, 320688, 320712, 320809, 320821, 320823, 320838, 320853, 320856, 320917, 320933, 320936, 320980, 321004, 321009, 321051, 321067, 321119}, vector<string> geometries={"GT","SG", "MP pix LBL","PIX HLS+ML STR fix"}, vector<Color_t> colours={kBlack, kRed, kGreen, kBlue});
 
 /*! \class Geometry
  *  \brief Class Geometry
@@ -165,13 +165,13 @@ class Geometry {
  */
 
 
-void DMRtrends(string label="_v11", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"MP pix LBL","PIX HLS+ML STR fix","GT","SG"}, string type="MB"){
+void DMRtrends(string label="v11", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"MP pix LBL","PIX HLS+ML STR fix","GT","SG"}, string type="MB"){
     gROOT->SetBatch();
     vector<int>RunNumbers;
     vector<TString> filenames;
     TRegexp regexp("[0-9][0-9][0-9][0-9][0-9][0-9]");
     for (const auto & entry : fs::recursive_directory_iterator(myValidation)){
-      if (entry.path().string().find("ExtendedOfflineValidation_Images/OfflineValidationSummary.root")!=std::string::npos){
+      if ((entry.path().string().find("ExtendedOfflineValidation_Images/OfflineValidationSummary.root")!=std::string::npos)&&(entry.path().string().find(label)!=std::string::npos)){
 	//std::cout << entry.path().string() << std::endl;
 	if(fs::is_empty(entry.path())) cout << "ERROR: Empty file " << entry.path() << endl;
 	else{
@@ -252,7 +252,7 @@ void DMRtrends(string label="_v11", string myValidation="/afs/cern.ch/cms/CAF/CM
         f->Close();
     }
     TString outname="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/DMRtrends_";
-    outname+=type.c_str(); outname+=".root";	
+    outname+=type.c_str(); outname+="_"; outname+=label; outname+=".root";	
     TFile * fout = TFile::Open(outname, "RECREATE");
     for (TString& structure: structures) {
         TString structname = structure;
@@ -384,7 +384,7 @@ void PlotDMRTrends(string label, string type, const vector<int> IOVfirstrun, vec
 
     //	vector<string> geometries {"GT", "PIXHLS+MLSTRfix"};
     //	vector<Color_t> colours { kBlack, kRed}; 
-    TString filename="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/DMRtrends_"+type+".root";
+    TString filename="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/DMRtrends_"+type+"_"+label+".root";
     TFile *in= new TFile(filename);
     for (TString& structure: structures) {
         TString structname = structure;
@@ -473,7 +473,7 @@ void PlotDMRTrends(string label, string type, const vector<int> IOVfirstrun, vec
                 c->Update();
                 TString structandlayer = getName(structure,layer,"");
 		///TO DO: select output directory for the printing the DMR trends
-                TString printfile="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/V11-"+type+"_"+variable+structandlayer;
+                TString printfile="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/"+label+"-"+type+"_"+variable+structandlayer;
                 c->SaveAs(printfile+".pdf");
                 c->SaveAs(printfile+".eps");
                 c->SaveAs(printfile+".png");
@@ -486,4 +486,8 @@ void PlotDMRTrends(string label, string type, const vector<int> IOVfirstrun, vec
     in->Close();
 }
 
-int main () { DMRtrends(); return 0; }
+int main () { 
+  //DMRtrends("v11", "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", {"GT","SG","MP pix LBL","PIX HLS+ML STR fix"}, "MB"); 
+  DMRtrends("2017_v2", "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", {"Prompt","EOY17"}, "MB"); 
+  return 0; 
+}
