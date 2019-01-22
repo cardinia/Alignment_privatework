@@ -98,10 +98,10 @@ void scalebylumi(TGraphErrors *g, double min=0., string scalefile="/afs/cern.ch/
 //old /afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv
 //new /afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv
 double scalerunbylumi(int run, double min=0., string scalefile="/afs/cern.ch/work/h/hpeterse/public/lumiPerRun80.csv");
-void PixelUpdateLines(TCanvas *c, vector<int>pixelupdateruns={314881, 316758, 317527, 318228, 320377});
-void PlotDMRTrends(string label="v11", string type="MB", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"GT","SG", "MP pix LBL","PIX HLS+ML STR fix"}, vector<Color_t> colours={kBlue, kRed, kGreen, kCyan}, TString outputdir="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/");
+void PixelUpdateLines(TCanvas *c, bool showlumi=false, vector<int>pixelupdateruns={314881, 316758, 317527, 318228, 320377});
+void PlotDMRTrends(string label="v11", string type="MB", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"GT","SG", "MP pix LBL","PIX HLS+ML STR fix"}, vector<Color_t> colours={kBlue, kRed, kGreen, kCyan}, TString outputdir="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", bool pixelupdate=false, bool showlumi=false);
 void compileDMRTrends(string label="v11", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"GT","SG", "MP pix LBL","PIX HLS+ML STR fix"}, string type="MB", bool hideproblems=false);
-void DMRtrends(string label="v11", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"GT","SG", "MP pix LBL","PIX HLS+ML STR fix"}, vector<Color_t> colours={kBlue, kRed, kGreen, kCyan}, TString outputdir="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", string type="MB", bool hideproblems=false);
+void DMRtrends(string label="v11", string myValidation="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/", vector<string> geometries={"GT","SG", "MP pix LBL","PIX HLS+ML STR fix"}, vector<Color_t> colours={kBlue, kRed, kGreen, kCyan}, TString outputdir="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", string type="MB", bool pixelupdate=false, bool showlumi=false, bool hideproblems=false);
 
 /*! \class Geometry
  *  \brief Class Geometry
@@ -175,10 +175,10 @@ TString getName (TString structure, int layer, TString geometry){
  *  \brief Create and plot the DMR trends.
  */
 
-void DMRtrends(string label, string myValidation, vector<string> geometries, vector<Color_t> colours, TString outputdir, string type, bool hideproblems){
+void DMRtrends(string label, string myValidation, vector<string> geometries, vector<Color_t> colours, TString outputdir, string type, bool pixelupdate, bool showlumi, bool hideproblems){
 
   compileDMRTrends(label, myValidation, geometries, type, hideproblems);
-  PlotDMRTrends(label, type, myValidation, geometries, colours, outputdir);
+  PlotDMRTrends(label, type, myValidation, geometries, colours, outputdir, pixelupdate, showlumi);
 
 };
 
@@ -302,11 +302,13 @@ void compileDMRTrends(string label, string myValidation, vector<string> geometri
 }
 
 
-void PixelUpdateLines(TCanvas *c, vector<int>pixelupdateruns){
+void PixelUpdateLines(TCanvas *c, bool showlumi, vector<int>pixelupdateruns){
+	vector<TPaveText*> labels;
 	double lastlumi=0.;
 	for(int pixelupdaterun : pixelupdateruns){
 	       double lumi=0.;
-	       lumi=scalerunbylumi(pixelupdaterun);
+	       if(showlumi)lumi=scalerunbylumi(pixelupdaterun);
+	       else lumi=pixelupdaterun;
 	       TLine *line = new TLine (lumi,c->GetUymin(),lumi,c->GetUymax());
 	       line->SetLineColor(kRed);
 	       line->SetLineWidth(2);
@@ -331,12 +333,16 @@ void PixelUpdateLines(TCanvas *c, vector<int>pixelupdateruns){
 	       double _sx;
 	       _sx = rx*(lumi-rx1)+x1ndc;
 	       bool tooclose = false;
-	       if((lumi-lastlumi)<5&&lastlumi!=0)tooclose=true;
+	       if((lumi-lastlumi)< showlumi ? 5000 : 5 &&lastlumi!=0)tooclose=true;
 	       TPaveText *box= new TPaveText(_sx+0.001,0.85-tooclose*0.05,_sx+0.08,0.89-tooclose*0.05,"blNDC");
 	       TText *textRun = box->AddText(Form("%i",int(pixelupdaterun)));
 	       textRun->SetTextSize(0.025);
-	       box->Draw("same");
+	       labels.push_back(box);
 	       lastlumi=lumi;
+	}
+	//Drawing in a separate loop to ensure that the labels are drawn on top of the lines
+	for(auto label: labels){
+	       labels->Draw("same");
 	}
 	c->Update();
 }
@@ -416,7 +422,7 @@ void scalebylumi(TGraphErrors *g, double min, string scalefile){
  *  \brief Plot the DMR trends.
  */
 
-void PlotDMRTrends(string label, string type, string myValidation, vector<string> geometries, vector<Color_t> colours, TString outputdir){
+void PlotDMRTrends(string label, string type, string myValidation, vector<string> geometries, vector<Color_t> colours, TString outputdir, bool pixelupdate, bool showlumi){
 
     vector<int> pixelupdateruns {314881, 316758, 317527, 318228, 320377};
 
@@ -513,7 +519,7 @@ void PlotDMRTrends(string label, string type, string myValidation, vector<string
                 str->SetTextSize(.03);
                 //cout << "pad max " << gPad->GetUymax() << " pad min " << gPad->GetUymin() << endl;
                 //cout << "graph max " << max << " graph min " << min << endl;
-                PixelUpdateLines(c,pixelupdateruns);
+                PixelUpdateLines(c, showlumi, pixelupdateruns);
 
 		legend->Draw();
                 c->Update();
@@ -535,10 +541,10 @@ void PlotDMRTrends(string label, string type, string myValidation, vector<string
 int main (int argc, char * argv[]) { 
 
 	if (argc < 8) {
-		cout << "DMRtrends label pathtoDMRs geometries colours outputdirectory type hideproblems" << endl;
-		DMRtrends("v3", "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/EOY18_v3/", {"GT","Pix ML Strip fixed -high IOV Gran-","Pix+Strip ML -low IOV Gran-"}, {kBlue, kRed, kGreen, kCyan}, "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", "MB", false); 
-
-		return 1;
+		cout << "DMRtrends label pathtoDMRs geometries colours outputdirectory type showpixelupdate showlumi hideproblems" << endl;
+		DMRtrends("v3", "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/EOY18_v3/", {"GT","Pix ML Strip fixed -high IOV Gran-","Pix+Strip ML -low IOV Gran-"}, {kBlue, kRed, kGreen, kCyan}, "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", "MB", true, false, false); 
+		
+		return 0;
 	}
 
 	TString label = argv[1],
@@ -546,19 +552,21 @@ int main (int argc, char * argv[]) {
 		geometrieandcolours = argv[3], //name1:title1:color1,name2:title2:color2,name3:title3:color3
 		outputdirectory = argv[4],
 	        type = argv[5];
-	bool	hideproblems = argv[6];
+	bool	showpixelupdate = argv[6],
+		showlumi = argv[7],
+		hideproblems = argv[8];
 
 	vector<string> geometries;
 	vector<Color_t> colours;
 	TObjArray *geometrieandcolourspairs = geometrieandcolours.Tokenize(",");
 	for (int i=0; i < geometrieandcolourspairs->GetEntries(); i++) {
-	  TObjArray *geomandcolourvec = TString(geometrieandcolourspairs->GetName()).Tokenize("|");
-	  geometries.push_back(geomandcolourvec->At(0)->GetName());
-	  colours.push_back((Color_t)(atoi(geomandcolourvec->At(1)->GetName())));
+	        TObjArray *geomandcolourvec = TString(geometrieandcolourspairs->GetName()).Tokenize("|");
+		geometries.push_back(geomandcolourvec->At(0)->GetName());
+		colours.push_back((Color_t)(atoi(geomandcolourvec->At(1)->GetName())));
 	}
-	DMRtrends(label.Data(),pathtoDMRs.Data(),geometries,colours,outputdirectory.Data(),type.Data(),hideproblems);
+	DMRtrends(label.Data(),pathtoDMRs.Data(),geometries,colours,outputdirectory.Data(),type.Data(),showpixelupdate,showlumi,hideproblems);
 
-  //DMRtrends("v3", "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/EOY18_v3/", {"GT","Pix ML Strip fixed -high IOV Gran-","Pix+Strip ML -low IOV Gran-"}, {kBlue, kRed, kGreen, kCyan}, "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", "MB", false); 
-
-  return 0; 
+	//DMRtrends("v3", "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/results/acardini/DMRs/EOY18_v3/", {"GT","Pix ML Strip fixed -high IOV Gran-","Pix+Strip ML -low IOV Gran-"}, {kBlue, kRed, kGreen, kCyan}, "/afs/cern.ch/cms/CAF/CMSALCA/ALCA_TRACKERALIGN/data/commonValidation/alignmentObjects/acardini/DMRsTrends/", "MB", false); 
+	
+	return 0; 
 }
